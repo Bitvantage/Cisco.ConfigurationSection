@@ -1,5 +1,5 @@
 ﻿# Bitvantage.Cisco.ConfigurationSection
-Facilitate parsing configuration files from Cisco routers and switches into a Document Object Model (DOM) document enabling network administrators and developers to easily read, modify, and manipulate the structured data from Cisco device configurations.
+Facilitate parsing configuration files from Cisco routers and switches into a document object model (DOM) enabling network administrators and developers to easily read, query, and modify the structured data from Cisco device configurations.
 ## Installing via NuGet Package Manager
 ```
 PM> NuGet\Install-Package Bitvantage.Cisco.ConfigurationSection
@@ -112,7 +112,7 @@ var success = configurationSection.TryGet("spanning-tree mode rapid-pvst", out v
 ```
 
 ### Finding Child Nodes by Exact Name
-To find nodes by exact match use the Find() method. Multiple names can be specified, which corresponds to the nodes path.
+To find nodes by exact match use the Find() method. Multiple names can be specified, which correspond to the node path.
 
 ```csharp
 var matchingNodes = configurationSection.Find("interface GigabitEtherne1/0","ip address 10.255.0.4 255.255.255.254");

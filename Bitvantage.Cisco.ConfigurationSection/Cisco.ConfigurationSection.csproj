@@ -16,15 +16,8 @@
 	  <AssemblyVersion>1.0.0</AssemblyVersion>
 	  <PackageReadmeFile>README.md</PackageReadmeFile>
 	  <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
-	  <Description>Facilitate parsing configuration files from Cisco routers and switches into a document object model (DOM) enabling network administrators and developers to easily read, query, and modify the structured data from Cisco device configurations</Description>
-	  <Copyright>Copyright © Michael Crino 2024</Copyright>
-	  <RepositoryUrl>https://github.com/Bitvantage/Cisco.ConfigurationSection.git</RepositoryUrl>
+	  <Description>Facilitate parsing configuration files from Cisco routers and switches into a Document Object Model (DOM) document enabling network administrators and developers to easily read, modify, and manipulate the structured data from Cisco device configurations.</Description>
 
   </PropertyGroup>
-
-	<ItemGroup>
-		<None Include="../README.md" Pack="true" PackagePath="" />
-		<None Include="../icon.png" Pack="true" PackagePath="" />
-	</ItemGroup>
 
 </Project>
