@@ -11,3 +11,8 @@
 * Have some sort of collection of fixups that the user can add stuff to. Call them all on Parse and ToString
 * Might be useful to have packages of fixups and somehow bundle them so that the user could specify their platform and code and have them installed automatically
 * Would be great to somehow extract the command syntax automatically by just fuzzing the parser
+* Needs to remove 'Current Configuration' header if it exists
+* Need TryAdd()
+* When adding a ConfigurationSection to another ConfigurationSection, should this automaticly create any parent objects
+* End requires some sort of speical handeling. The way it works now does not make much sense
+* Add(ConfigurationSection) should return the new ConfigurationSection

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Cisco.ConfigurationSection": {
+      "commandName": "Project",
+      "commandLineArgs": "diff c:\\temp\\f1.txt c:\\temp\\f2.txt"
+    }
+  }
+}

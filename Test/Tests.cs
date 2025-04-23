@@ -16,7 +16,9 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System;
 using System.Net;
+using System.Text;
 using Bitvantage.Cisco;
 
 namespace Test;
@@ -581,35 +583,6 @@ public class Tests
         Assert.That(configuration[0].Command, Is.EqualTo("banner test1 ^"));
     }
 
-    [Test]
-    public void Compare01()
-    {
-        var left = ConfigurationSection.Parse(TestData.ConfigurationFragment03);
-        var right = ConfigurationSection.Parse(TestData.ConfigurationFragment04);
-        //var left = new Section()
-        //    .Add("Line A")
-        //        .Add("Line A.A")
-        //            .Add("Line A.A.A").Root
-        //    .Add("Line B")
-        //        .Add("Line B.A")
-        //            .Add("Line B.A.A").Root
-        //    .Add("Line C")
-        //        .Add("Line C.A")
-        //            .Add("Line C.A.A").Root;
-
-        //var right = new Section()
-        //    .Add("Line A")
-        //        .Add("Line A.A")
-        //            .Add("Line A.A.B").Root
-        //    .Add("Line B")
-        //        .Add("Line B.B")
-        //            .Add("Line B.A.A").Root
-        //    .Add("Line D")
-        //        .Add("Line D.A")
-        //            .Add("Line D.A.A").Root;
-
-        var comparision = ConfigurationSection.Compare(left.Children(), right.Children());
-    }
 
     [Test]
     public void Contains01()
@@ -1172,17 +1145,6 @@ public class Tests
         Assert.That(sectionMatches[5].Match!.Groups["address"].Value, Is.EqualTo("10.255.0.8"));
     }
 
-    [Test]
-    public void Merge01()
-    {
-        var left = ConfigurationSection.Parse(TestData.ConfigurationFragment03);
-        var right = ConfigurationSection.Parse(TestData.ConfigurationFragment04);
-
-        var comparision = ConfigurationSection.Compare(left.Children(), right.Children());
-
-        var zzz = comparision.Merge();
-        var kkk = zzz.ToString();
-    }
 
     [Test]
     public void Next01()
@@ -1369,22 +1331,313 @@ public class Tests
     }
 
     [Test]
-    public void Playground01()
+    public void Compare01()
     {
-        var configuration = ConfigurationSection.Parse("""
-            interface GigabitEthernet0/1
-             ip address 192.168.1.1 255.255.255.0
-             speed 1000
-             duplex full
-            !
-            interface GigabitEthernet0/2
-             ip address 192.168.1.2 255.255.255.0
-             speed 1000
-             duplex full
-            !
+        var first = ConfigurationSection.Parse(TestData.ConfigurationFragment03);
+        var second = ConfigurationSection.Parse(TestData.ConfigurationFragment04);
+
+        var mergeResult = ConfigurationSection.Compare(first, second);
+
+        var expected = """
+            Line A
+             Line A.A
+              Line A.A.A
+              Line A.A.B
+            Line B
+             Line B.A
+              Line B.A.A
+              Line B.A.B
+              Line B.A.C
+             Line B.B
+              Line B.B.A
+              Line B.B.B
+              Line B.A.A
+            Line D
+             Line D.A
+              Line D.A.A
+            Line C
+             Line C.A
+              Line C.A.A
+            Line E
+             Line E.A
+              Line E.A.A
+
+            """;
+
+        Assert.That(mergeResult.Merged.Section.ToString(), Is.EqualTo(expected));
+
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line A"]], Is.EqualTo(SectionMembership.First | SectionMembership.Second));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line A"]["Line A.A"]], Is.EqualTo(SectionMembership.First | SectionMembership.Second));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line A"]["Line A.A"]["Line A.A.A"]], Is.EqualTo(SectionMembership.First));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line A"]["Line A.A"]["Line A.A.B"]], Is.EqualTo(SectionMembership.Second));
+        
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line B"]], Is.EqualTo(SectionMembership.First | SectionMembership.Second));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line B"]["Line B.A"]], Is.EqualTo(SectionMembership.First));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line B"]["Line B.A"]["Line B.A.A"]], Is.EqualTo(SectionMembership.First));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line B"]["Line B.A"]["Line B.A.B"]], Is.EqualTo(SectionMembership.First));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line B"]["Line B.A"]["Line B.A.C"]], Is.EqualTo(SectionMembership.First));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line B"]["Line B.B"]], Is.EqualTo(SectionMembership.First | SectionMembership.Second));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line B"]["Line B.B"]["Line B.B.A"]], Is.EqualTo(SectionMembership.First));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line B"]["Line B.B"]["Line B.B.B"]], Is.EqualTo(SectionMembership.First));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line B"]["Line B.B"]["Line B.A.A"]], Is.EqualTo(SectionMembership.Second));
+
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line D"]], Is.EqualTo(SectionMembership.Second));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line D"]["Line D.A"]], Is.EqualTo(SectionMembership.Second));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line D"]["Line D.A"]["Line D.A.A"]], Is.EqualTo(SectionMembership.Second));
+
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line C"]], Is.EqualTo(SectionMembership.First));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line C"]["Line C.A"]], Is.EqualTo(SectionMembership.First));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line C"]["Line C.A"]["Line C.A.A"]], Is.EqualTo(SectionMembership.First));
+
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line E"]], Is.EqualTo(SectionMembership.First));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line E"]["Line E.A"]], Is.EqualTo(SectionMembership.First));
+        Assert.That(mergeResult.Merged.SectionMatch[mergeResult.Merged.Section["Line E"]["Line E.A"]["Line E.A.A"]], Is.EqualTo(SectionMembership.First));
+    }
+
+    [Test]
+    public void ComparePatch01()
+    {
+        var first = ConfigurationSection.Parse("""
+            1.1
+            2.1
+             3.1
+              4.1
+              4.2
+               5.1
+                6.1
+                6.2
+            3.1
+             3.1.1
             """);
 
-        foreach (var configurationSection in configuration.Search("^interface GigabitEthernet")) 
-            configurationSection.AddFirst("description Ethernet port");
+        var second = ConfigurationSection.Parse("""
+            1.1
+             2.1
+             2.2
+             2.3
+            3.1
+             3.1.2
+            """);
+
+        var comparisionResult = ConfigurationSection.Compare(first, second);
+
+        var patch = comparisionResult.Patch();
+
+        Assert.That(patch.Section.ToString(), Is.EqualTo("""
+        3.1
+         no 3.1.1
+        2.1
+         3.1
+          4.2
+           5.1
+            no 6.2
+            no 6.1
+           no 5.1
+          no 4.2
+          no 4.1
+         no 3.1
+        no 2.1
+        1.1
+         2.1
+         2.2
+         2.3
+        3.1
+         3.1.2
+        
+        """));
+    }
+
+    [Test]
+    public void ComparePatch02()
+    {
+        var first = ConfigurationSection.Parse("""
+            X
+             X.10
+             X.20
+             X.30
+            Y
+             Y.10
+             Y.20
+             Y.30
+            Z
+             no Z.10
+            """);
+
+        var second = ConfigurationSection.Parse("""
+            W
+             W.10
+             W.20
+             W.30
+            X
+             X.30
+            Y
+             Y.10
+             Y.15
+            
+            """);
+
+        var comparisionResult = ConfigurationSection.Compare(first, second);
+
+        var patch = comparisionResult.Patch();
+
+        Assert.That(patch.Section.ToString(), Is.EqualTo("""
+            Z
+             Z.10
+            no Z
+            Y
+             no Y.30
+             no Y.20
+            X
+             no X.20
+             no X.10
+            Y
+             Y.15
+            W
+             W.10
+             W.20
+             W.30
+            
+            """));
+    }
+
+    [Test]
+    public void CompareUniqueToFirst01()
+    {
+        var first = ConfigurationSection.Parse("""
+            X
+             X.10
+             X.20
+             X.30
+            Y
+             Y.10
+             Y.20
+             Y.30
+            Z
+             no Z.10
+            """);
+
+        var second = ConfigurationSection.Parse("""
+            W
+             W.10
+             W.20
+             W.30
+            X
+             X.30
+            Y
+             Y.10
+             Y.15
+
+            """);
+
+        var comparisionResult = ConfigurationSection.Compare(first, second);
+
+        var uniqueToFirst = comparisionResult.UniqueToFirst();
+
+        Assert.That(uniqueToFirst.Section.ToString(), Is.EqualTo("""
+            X
+             X.10
+             X.20
+            Y
+             Y.20
+             Y.30
+            Z
+             no Z.10
+            
+            """));
+    }
+
+    [Test]
+    public void CompareUniqueToSecond01()
+    {
+        var first = ConfigurationSection.Parse("""
+            X
+             X.10
+             X.20
+             X.30
+            Y
+             Y.10
+             Y.20
+             Y.30
+            Z
+             no Z.10
+            """);
+
+        var second = ConfigurationSection.Parse("""
+            W
+             W.10
+             W.20
+             W.30
+            X
+             X.30
+            Y
+             Y.10
+             Y.15
+
+            """);
+
+        var comparisionResult = ConfigurationSection.Compare(first, second);
+
+        var uniqueToSecond = comparisionResult.UniqueToSecond();
+
+        Assert.That(uniqueToSecond.Section.ToString(), Is.EqualTo("""
+            Y
+             Y.15
+            W
+             W.10
+             W.20
+             W.30
+            
+            """));
+    }
+
+    [Test]
+    public void CompareDifferences01()
+    {
+        var first = ConfigurationSection.Parse("""
+            X
+             X.10
+             X.20
+             X.30
+            Y
+             Y.10
+             Y.20
+             Y.30
+            Z
+             no Z.10
+            """);
+
+        var second = ConfigurationSection.Parse("""
+            W
+             W.10
+             W.20
+             W.30
+            X
+             X.30
+            Y
+             Y.10
+             Y.15
+
+            """);
+
+        var comparisionResult = ConfigurationSection.Compare(first, second);
+
+        var differences = comparisionResult.Differences();
+
+        Assert.That(differences.Section.ToString(), Is.EqualTo("""
+            X
+             X.10
+             X.20
+            Y
+             Y.15
+             Y.20
+             Y.30
+            Z
+             no Z.10
+            W
+             W.10
+             W.20
+             W.30
+            
+            """));
     }
 }

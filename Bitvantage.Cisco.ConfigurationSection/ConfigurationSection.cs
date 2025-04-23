@@ -1,26 +1,24 @@
 ﻿/*
    Bitvantage.Cisco.ConfigurationSection
    Copyright (C) 2024 Michael Crino
-   
+
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU Affero General Public License for more details.
-   
+
    You should have received a copy of the GNU Affero General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
 using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -218,7 +216,6 @@ public class ConfigurationSection : IList<ConfigurationSection>
             _children.InsertRange(_children.Count - 1, sectionClone);
         else
             _children.AddRange(sectionClone);
-
     }
 
     public ConfigurationSection Add(string line)
@@ -395,7 +392,7 @@ public class ConfigurationSection : IList<ConfigurationSection>
         if (IsRoot)
             return CloneChildren(newParent);
 
-        return new List<ConfigurationSection>(new []{CloneSelf(newParent)});
+        return new List<ConfigurationSection>(new[] { CloneSelf(newParent) });
     }
 
     public List<ConfigurationSection> CloneChildren(ConfigurationSection parent)
@@ -469,43 +466,6 @@ public class ConfigurationSection : IList<ConfigurationSection>
         return rootClone;
     }
 
-    public ComparisionResults Compare(IEnumerable<ConfigurationSection> otherSections)
-    {
-        return Compare(Children(), otherSections);
-    }
-
-    public static ComparisionResults Compare(IEnumerable<ConfigurationSection> firstSections, IEnumerable<ConfigurationSection> secondSections)
-    {
-        var firstSectionList = firstSections.ToList();
-        var secondSectionList = secondSections.ToList();
-
-        var commonToBoth = firstSectionList
-            .SelectMany(item => item.DescendantsAndSelf())
-            .IntersectBy(
-                secondSectionList
-                    .SelectMany(item => item.DescendantsAndSelf())
-                    .Select(item => item.Path), section => section.Path)
-            .ToList();
-
-        var uniqueToFirst = firstSectionList
-            .SelectMany(item => item.DescendantsAndSelf())
-            .ExceptBy(
-                secondSectionList
-                    .SelectMany(item => item.DescendantsAndSelf())
-                    .Select(item => item.Path), section => section.Path)
-            .ToList();
-
-        var uniqueToSecond = secondSectionList
-            .SelectMany(item => item.DescendantsAndSelf())
-            .ExceptBy(
-                firstSectionList
-                    .SelectMany(item => item.DescendantsAndSelf())
-                    .Select(item => item.Path), section => section.Path)
-            .ToList();
-
-        return new ComparisionResults(commonToBoth, uniqueToFirst, uniqueToSecond);
-    }
-
     public bool Contains(params string[] command)
     {
         return Find(command).Any();
@@ -565,13 +525,15 @@ public class ConfigurationSection : IList<ConfigurationSection>
 
     public ConfigurationSection GetOrAdd(string line, int additionalIndentation)
     {
-        var section = Parent
-            ._children
-            .FirstOrDefault(item => item.Line == line);
+        // search for existing item
+        var section = Parent?
+            ._children.FirstOrDefault(item => item.Line == line);
 
+        // if there is an existing item, return it
         if (section != null)
             return section;
 
+        // add a new item
         return Add(line, additionalIndentation);
     }
 
@@ -885,7 +847,7 @@ public class ConfigurationSection : IList<ConfigurationSection>
 
         // create a new node to replace this node
         var newSection = new ConfigurationSection(this, line, additionalIndention);
-        
+
         // optionally copy children to the replacement node
         if (keepChildren)
             newSection.AddRange(this);
@@ -1023,7 +985,73 @@ public class ConfigurationSection : IList<ConfigurationSection>
         End
     }
 
-    private record SectionText(int IndentionLevel, ConfigurationSection Section)
+    private record SectionText(int IndentionLevel, ConfigurationSection Section);
+
+    public static ComparisionResult Compare(ConfigurationSection first, ConfigurationSection second)
     {
+        // TODO: can we just use Descendants() instead of the stack?
+        // TODO: can we use Destination.Distinct for simpler effect?
+
+        var stack = new Queue<StackFrame>();
+        var mergedSection = new ConfigurationSection();
+        var matchTypes = new Dictionary<ConfigurationSection, SectionMembership>();
+
+        foreach (var child in first.Children().Where(item => !item.Command.StartsWith("!")))
+            stack.Enqueue(new StackFrame(child, mergedSection));
+
+        // copy the first configuration section
+        while (stack.TryDequeue(out var sourceSection))
+        {
+            var destinationSection = sourceSection.Destination.Add(sourceSection.Source.Line!);
+            matchTypes.Add(destinationSection, SectionMembership.First);
+
+            foreach (var child in sourceSection.Source.Children().Where(item => !item.Command.StartsWith("!")))
+                stack.Enqueue(new StackFrame(child, destinationSection));
+        }
+
+        // merge the second configuration section
+        foreach (var child in second.Children().Where(item => !item.Command.StartsWith("!")))
+            stack.Enqueue(new StackFrame(child, mergedSection));
+
+        while (stack.TryDequeue(out var sourceSection))
+        {
+            // find an existing section, in any
+            var destinationSection = sourceSection
+                .Destination
+                .Children()
+                .FirstOrDefault(item => item.Line == sourceSection.Source.Line);
+
+            // if there was no existing section, find the closest matching section, from the top down, to anchor the new section to
+            if (destinationSection == null)
+            {
+                ConfigurationSection? previousSourceSection = sourceSection.Source.PreviousOrDefault();
+                ConfigurationSection? anchorSection = null;
+                if (previousSourceSection != null)
+                    do
+                    {
+                        anchorSection = sourceSection
+                            .Destination
+                            .FirstOrDefault(item => item.Line == previousSourceSection.Line);
+
+                        previousSourceSection = previousSourceSection.PreviousOrDefault();
+                    } while (previousSourceSection != null && anchorSection == null);
+
+                if (anchorSection == null)
+                    destinationSection = sourceSection.Destination.Add(sourceSection.Source.Line!);
+                else
+                    destinationSection = anchorSection.AddAfterSelf(sourceSection.Source.Line!);
+            }
+
+            if (!matchTypes.TryAdd(destinationSection, SectionMembership.Second))
+                matchTypes[destinationSection] = SectionMembership.First | SectionMembership.Second;
+
+            foreach (var child in sourceSection.Source.Children().Where(item => !item.Command.StartsWith("!")))
+                stack.Enqueue(new StackFrame(child, destinationSection));
+        }
+
+        return new ComparisionResult(new ComparisionContext(mergedSection, matchTypes));
     }
+
+    record StackFrame(ConfigurationSection Source, ConfigurationSection Destination);
+
 }
