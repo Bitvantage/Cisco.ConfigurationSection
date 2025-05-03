@@ -1178,6 +1178,22 @@ public class Tests
         Assert.That(section.ToString(), Is.EqualTo(TestData.RouterConfiguration01 + "\r\n"));
     }
 
+    [Test(Description = "Blank leading lines are ignored")]
+    public void ParseTest02()
+    {
+        var section = ConfigurationSection.Parse("""
+        
+        Current configuration : 6958 bytes
+        !
+        ! Last configuration change at 13:04:33 UTC Mon Apr 21 2025 by admin
+        !
+        version 15.2
+
+        """);
+
+        Assert.That(section.Descendants().Count(), Is.EqualTo(4));
+        Assert.That(section.Descendants().Single(item => !item.Command.StartsWith("!")).Command, Is.EqualTo("version 15.2"));
+    }
     [Test]
     public void Path01()
     {

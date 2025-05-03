@@ -644,6 +644,11 @@ public class ConfigurationSection : IList<ConfigurationSection>
             currentIndentionLevel = lineMatch.Groups["whiteSpaces"].Value.Length;
             newlineSequence = lineMatch.Groups["newline"].Value;
 
+            if (configState == ConfigState.Start && string.IsNullOrWhiteSpace(line))
+            {
+                goto readNextLine;
+            }
+
             if (configState == ConfigState.Start && line.StartsWith("Building configuration..."))
             {
                 configState = ConfigState.BuildingConfig;
