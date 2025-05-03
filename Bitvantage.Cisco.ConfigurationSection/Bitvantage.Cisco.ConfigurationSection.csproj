@@ -1,33 +1,29 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-	  <AssemblyName>$(MSBuildProjectName)</AssemblyName>
-	  <RootNamespace>Bitvantage.Cisco</RootNamespace>
-	  <Title>Bitvantage.Cisco.ConfigurationSection</Title>
-	  <PackageProjectUrl>https://github.com/Bitvantage/Cisco.ConfigurationSection</PackageProjectUrl>
-	  <PackageIcon>icon.png</PackageIcon>
-	  <RepositoryType>git</RepositoryType>
-	  <PackageTags>network;networking;cisco;cisco config;cisco configuration</PackageTags>
-	  <VersionPrefix>1.0.0</VersionPrefix>
-	  <FileVersion>1.0.0</FileVersion>
-	  <AssemblyVersion>1.0.0</AssemblyVersion>
-	  <PackageReadmeFile>README.md</PackageReadmeFile>
-	  <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
-	  <Description>Facilitate parsing configuration files from Cisco routers and switches into a document object model (DOM) enabling network administrators and developers to easily read, query, and modify the structured data from Cisco device configurations</Description>
-	  <Copyright>Copyright © Michael Crino 2024</Copyright>
-	  <RepositoryUrl>https://github.com/Bitvantage/Cisco.ConfigurationSection.git</RepositoryUrl>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AssemblyName>$(MSBuildProjectName)</AssemblyName>
+		<RootNamespace>Bitvantage.Cisco</RootNamespace>
+		<Title>Bitvantage.Cisco.ConfigurationSection</Title>
+		<PackageProjectUrl>https://github.com/Bitvantage/Cisco.ConfigurationSection</PackageProjectUrl>
+		<PackageIcon>icon.png</PackageIcon>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>network;networking;cisco;cisco config;cisco configuration</PackageTags>
+		<VersionPrefix>2.0.0</VersionPrefix>
+		<FileVersion>2.0.0</FileVersion>
+		<AssemblyVersion>2.0.0</AssemblyVersion>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
+		<Description>Facilitate parsing configuration files from Cisco routers and switches into a document object model (DOM) enabling network administrators and developers to easily read, query, and modify the structured data from Cisco device configurations</Description>
+		<Copyright>Copyright © Michael Crino 2024</Copyright>
+		<RepositoryUrl>https://github.com/Bitvantage/Cisco.ConfigurationSection.git</RepositoryUrl>
 
-  </PropertyGroup>
+	</PropertyGroup>
 
 	<ItemGroup>
 		<None Include="../icon.png" Pack="true" PackagePath="" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Properties\" />
 	</ItemGroup>
 
 </Project>
