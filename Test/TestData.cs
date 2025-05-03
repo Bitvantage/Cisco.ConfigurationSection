@@ -1,6 +1,6 @@
 ﻿/*
    Bitvantage.Cisco.ConfigurationSection
-   Copyright (C) 2024 Michael Crino
+   Copyright (C) 2025 Michael Crino
    
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Affero General Public License as published by
